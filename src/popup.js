@@ -34,7 +34,7 @@ async function updateButton() {
   }
 
   const on = await isXdebugOn(url);
-  btn.textContent = on ? 'Tắt Xdebug' : 'Bật Xdebug';
+  btn.textContent = on ? 'Disable Xdebug' : 'Enable Xdebug';
   btn.style.background = on ? '#e74c3c' : '#2ecc71';
   btn.disabled = false;
 
@@ -92,7 +92,7 @@ async function updateButton() {
     return;
   }
   const on = await isXdebugOn(url);
-  btn.textContent = on ? 'Tắt Xdebug' : 'Bật Xdebug';
+  btn.textContent = on ? 'Disable Xdebug' : 'Enable Xdebug';
   btn.style.background = on ? '#e74c3c' : '#2ecc71';
   btn.disabled = false;
   
