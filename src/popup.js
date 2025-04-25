@@ -1,113 +1,79 @@
-const COOKIE_NAME = 'XDEBUG_SESSION';
-const COOKIE_VALUE = 'chrome';
+const SESSION_COOKIE = { name: 'Debug', value: 'chrome' };
+const PROFILER_COOKIE = { name: 'Profiler', value: '1' };
 
 function getCurrentTab() {
   return new Promise(resolve => {
-    chrome.tabs.query({active: true, lastFocusedWindow: true}, tabs => {
+    chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
       resolve(tabs[0]);
     });
   });
 }
 
-
 function getUrlForCookies(tab) {
   try {
     const url = new URL(tab.url);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return null;
-    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
     return url.origin;
   } catch (e) {
     return null;
   }
 }
 
-async function updateButton() {
-  const btn = document.getElementById('toggleBtn');
-  const tab = await getCurrentTab();
-  const url = getUrlForCookies(tab);
-
-  if (!url) {
-    btn.textContent = 'Chỉ dùng trên http/https';
-    btn.disabled = true;
-    return;
-  }
-
-  const on = await isXdebugOn(url);
-  btn.textContent = on ? 'Disable Xdebug' : 'Enable Xdebug';
-  btn.style.background = on ? '#e74c3c' : '#2ecc71';
-  btn.disabled = false;
-
-  btn.onclick = async () => {
-    btn.disabled = true;
-    if (on) {
-      await turnOff(url);
-    } else {
-      await turnOn(url);
-    }
-    chrome.tabs.reload(tab.id);
-    setTimeout(updateButton, 500);
-  };
-}
-
-
-document.addEventListener('DOMContentLoaded', updateButton);
-
-async function isXdebugOn(url) {
+async function isCookieSet(url, cookieName) {
   return new Promise(resolve => {
-    chrome.cookies.get({url, name: COOKIE_NAME}, cookie => {
+    chrome.cookies.get({ url, name: cookieName }, cookie => {
       resolve(!!cookie);
     });
   });
 }
 
-async function turnOn(url) {
+async function setCookie(url, cookie) {
   return new Promise(resolve => {
-    chrome.cookies.set({
-      url,
-      name: COOKIE_NAME,
-      value: COOKIE_VALUE,
-      path: '/'
-    }, () => resolve());
+    chrome.cookies.set({ url, name: cookie.name, value: cookie.value, path: '/' }, () => resolve());
   });
 }
 
-async function turnOff(url) {
+async function removeCookie(url, cookieName) {
   return new Promise(resolve => {
-    chrome.cookies.remove({
-      url,
-      name: COOKIE_NAME
-    }, () => resolve());
+    chrome.cookies.remove({ url, name: cookieName }, () => resolve());
   });
 }
 
-
-async function updateButton() {
-  const btn = document.getElementById('toggleBtn');
-  const tab = await getCurrentTab();
-  const url = getUrlForCookies(tab);
+async function updateButton(btnId, cookie, url, tab) {
+  const btn = document.getElementById(btnId);
   if (!url) {
-    btn.textContent = 'Invalid URL';
+    btn.textContent = 'It only available on http/https';
     btn.disabled = true;
     return;
   }
-  const on = await isXdebugOn(url);
-  btn.textContent = on ? 'Disable Xdebug' : 'Enable Xdebug';
-  btn.style.background = on ? '#e74c3c' : '#2ecc71';
+
+  const isOn = await isCookieSet(url, cookie.name);
+  btn.textContent = isOn ? `Disable ${cookie.name}` : `Enable ${cookie.name}`;
+  if(isOn) {
+    btn.classList.add('btn-off')
+  } else {
+    btn.classList.remove('btn-off')
+  }
+  // btn.style.background = isOn ? '#e74c3c' : '#cccccc';
   btn.disabled = false;
-  
+
   btn.onclick = async () => {
     btn.disabled = true;
-    if (on) {
-      await turnOff(url);
+    if (isOn) {
+      await removeCookie(url, cookie.name);
     } else {
-      await turnOn(url);
+      await setCookie(url, cookie);
     }
-
     chrome.tabs.reload(tab.id);
-
-    setTimeout(updateButton, 500);
+    setTimeout(() => updateButton(btnId, cookie, url, tab), 500);
   };
 }
 
-document.addEventListener('DOMContentLoaded', updateButton);
+async function initialize() {
+  const tab = await getCurrentTab();
+  const url = getUrlForCookies(tab);
+  await updateButton('toggleSessionBtn', SESSION_COOKIE, url, tab);
+  await updateButton('toggleProfilerBtn', PROFILER_COOKIE, url, tab);
+}
+
+document.addEventListener('DOMContentLoaded', initialize);
