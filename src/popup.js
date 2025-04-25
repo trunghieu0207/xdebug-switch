@@ -1,5 +1,5 @@
-const SESSION_COOKIE = { name: 'Debug', value: 'chrome' };
-const PROFILER_COOKIE = { name: 'Profiler', value: '1' };
+const SESSION_COOKIE = { name: 'XDEBUG_SESSION', buttonName: 'Debug', value: 'chrome' };
+const PROFILER_COOKIE = { name: 'XDEBUG_PROFILE', buttonName: 'Profiler', value: '1' };
 
 function getCurrentTab() {
   return new Promise(resolve => {
@@ -48,7 +48,7 @@ async function updateButton(btnId, cookie, url, tab) {
   }
 
   const isOn = await isCookieSet(url, cookie.name);
-  btn.textContent = isOn ? `Disable ${cookie.name}` : `Enable ${cookie.name}`;
+  btn.textContent = isOn ? `Disable ${cookie.buttonName}` : `Enable ${cookie.buttonName}`;
   if(isOn) {
     btn.classList.add('btn-off')
   } else {
